@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            width: 192px;
+            height: 192px;
+            background: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+        }
+    </style>
+</head>
+<body>
+    🏪
+</body>
+</html>
+
+🚀 ETAPA 3: Como Rodar o Projeto
+
+Passo 1: Instalar o Python e dependências
+bash
+cd backend
+pip install -r requirements.txt
+
+Passo 2: Iniciar o servidor Python
+bash
+python app.py
