@@ -228,7 +228,7 @@ async function renderVendas() {
                 <label>👤 Cliente (opcional para fiado)</label>
                 <select id="clienteVenda">
                     <option value="">Consumidor Final</option>
-                    ${clientes.map(c => `<option value="${c.id}" data-divida="${c.divida}" data-limite="${c.limite}">${c.nome} (Limite: ${formatarMoeda(c.limite)} | Deve: ${formatarMoeda(c.divida)})</option>`).join('')}
+                    ${clientes.map(c => `<option value="${c.id}" data-divida="${c.divida}" data-limite="${c.limite_fiado}">${c.nome} (Limite: ${formatarMoeda(c.limite_fiado)} | Deve: ${formatarMoeda(c.divida)})</option>`).join('')}
                 </select>
             </div>
             
@@ -340,8 +340,8 @@ async function finalizarVenda(tipo) {
         const cliente = clientes.find(c => c.id === clienteId);
         const totalVenda = carrinho.reduce((s, i) => s + (i.preco * i.quantidade), 0);
         
-        if (cliente.divida + totalVenda > cliente.limite) {
-            mostrarAlerta(`Cliente excederia o limite de fiado! Limite: ${formatarMoeda(cliente.limite)}`, 'erro');
+        if (cliente.divida + totalVenda > cliente.limite_fiado) {
+            mostrarAlerta(`Cliente excederia o limite de fiado! Limite: ${formatarMoeda(cliente.limite_fiado)}`, 'erro');
             return;
         }
     }
@@ -510,7 +510,7 @@ async function renderClientes() {
                                 <td>${c.id}</td>
                                 <td>${c.nome}</td>
                                 <td>${c.telefone || '-'}</td>
-                                <td>${formatarMoeda(c.limite)}</td>
+                                <td>${formatarMoeda(c.limite_fiado)}</td>
                                 <td style="${c.divida > 0 ? 'color:#f44336; font-weight:bold' : ''}">${formatarMoeda(c.divida)}</td>
                                 <td>
                                     <button class="btn btn-warning btn-small" onclick="editarCliente(${c.id})">✏️</button>
@@ -550,7 +550,7 @@ function abrirModalCliente(id = null) {
                 </div>
                 <div class="form-group">
                     <label>Limite de Fiado (R$)</label>
-                    <input type="number" step="0.01" id="modalLimite" value="${cliente ? cliente.limite : 0}">
+                    <input type="number" step="0.01" id="modalLimite" value="${cliente ? cliente.limite_fiado : 0}">
                 </div>
                 <button type="submit" class="btn btn-primary">Salvar</button>
             </form>
@@ -567,30 +567,42 @@ function abrirModalCliente(id = null) {
         
         const dados = {
             nome: document.getElementById('modalNome').value,
-            telefone: document.getElementById('modalTelefone').value,
-            limite: parseFloat(document.getElementById('modalLimite').value) || 0
+            telefone: document.getElementById('modalTelefone').value || null,
+            limite_fiado: parseFloat(document.getElementById('modalLimite').value || "0")
         };
         
+        console.log('Dados enviados:', dados);
+        
         try {
+            let response;
             if (id) {
-                await fetch(`${API_URL}/clientes/${id}`, {
+                response = await fetch(`${API_URL}/clientes/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)
                 });
-                mostrarAlerta('Cliente atualizado!');
+                if (response.ok) mostrarAlerta('Cliente atualizado!');
             } else {
-                await fetch(`${API_URL}/clientes`, {
+                response = await fetch(`${API_URL}/clientes`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)
                 });
-                mostrarAlerta('Cliente criado!');
+                if (response.ok) mostrarAlerta('Cliente criado!');
             }
+            
+            if (!response.ok) {
+                const erro = await response.json();
+                console.error('Erro:', erro);
+                mostrarAlerta(`Erro: ${JSON.stringify(erro.detail || erro)}`, 'erro');
+                return;
+            }
+            
             modal.remove();
             await renderClientes();
             await carregarClientes();
         } catch (error) {
+            console.error('Erro ao salvar:', error);
             mostrarAlerta('Erro ao salvar cliente!', 'erro');
         }
     });
@@ -647,8 +659,8 @@ async function renderFiado() {
                                 <td>${c.nome}</td>
                                 <td>${c.telefone || '-'}</td>
                                 <td style="color:#f44336; font-weight:bold">${formatarMoeda(c.divida)}</td>
-                                <td>${formatarMoeda(c.limite)}</td>
-                                <td>${formatarMoeda(c.limite - c.divida)}</td>
+                                <td>${formatarMoeda(c.limite_fiado)}</td>
+                                <td>${formatarMoeda(c.limite_fiado - c.divida)}</td>
                                 <td>
                                     <button class="btn btn-primary btn-small" onclick="abrirPagamento(${c.id}, '${c.nome}', ${c.divida})">💰 Pagar</button>
                                 </td>

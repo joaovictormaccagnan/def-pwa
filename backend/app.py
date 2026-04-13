@@ -168,6 +168,16 @@ def atualizar_cliente(cliente_id: int, cliente: schemas.ClienteBase, db: Session
     return db_cliente
 
 
+@app.delete("/clientes/{cliente_id}")
+def deletar_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    db_cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    if not db_cliente:
+        raise HTTPException(404, "Cliente não encontrado")
+    db.delete(db_cliente)
+    db.commit()
+    return {"mensagem": "Cliente deletado"}
+
+
 # ================= VENDAS =================
 
 @app.post("/vendas")

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -24,8 +24,22 @@ class Produto(ProdutoBase):
 # ================= CLIENTE =================
 class ClienteBase(BaseModel):
     nome: str
-    telefone: Optional[str]
-    limite_fiado: float
+    telefone: Optional[str] = None
+    limite_fiado: float = 0.0
+    
+    @field_validator('telefone', mode='before')
+    @classmethod
+    def limpar_telefone(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
+    
+    @field_validator('limite_fiado', mode='before')
+    @classmethod
+    def garantir_float(cls, v):
+        if v is None or v == "":
+            return 0.0
+        return float(v)
 
 
 class ClienteCreate(ClienteBase):
